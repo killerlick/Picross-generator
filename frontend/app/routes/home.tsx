@@ -28,19 +28,30 @@ export default function Home() {
 
   const { apiUrl } = useLoaderData<typeof loader>();
 
-  const handleGenerate = async (e: any) => {
+  const handleGenerate  = async (e:any) => {
     e.preventDefault();
     if (!file) { return }
 
-    if (picrossImg){
+    if (!width || !height) {
+      setError("Please enter valid width and height values.");
+      return;
+    }else if(Number.parseInt(width) <= 0 || Number.parseInt(height) <= 0){
+      setError("Width and height must be positive integers.");
+      return;
+    }
+
+    if (picrossImg) {
       URL.revokeObjectURL(picrossImg);
     }
-    if (JSONDownloadUrl){
+    if (JSONDownloadUrl) {
       URL.revokeObjectURL(JSONDownloadUrl);
     }
 
+
     setIsLoading(true);
     setError(null);
+
+
 
     const formData = new FormData();
     formData.append("file", file);
@@ -88,23 +99,35 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center pt-16">
       <h1 className="text-5xl font-bold mb-4">Welcome to Picross Generator</h1>
       <p className="text-lg">Generate your own picross puzzles with ease!</p>
-      <form className="flex flex-col gap-2 bg-gray-400 p-3 shadow-2xl" onSubmit={handleGenerate}>
+      <form className="flex flex-col gap-2 bg-gray-400 p-3 shadow-2xl"
+        onSubmit={handleGenerate}>
         <input type="file" name="file"
+        accept="image/*"
           onChange={
             (e) => {
-              if (!e.target.files) { return }
-              setFile(e.target.files[0])
+              const target = e.target.files?.[0];
+              if (!target) { return }
+              if (!target.type.startsWith("image/")) {
+                setError("Please upload a valid image file.");
+                return;
+              }
+              setError(null);
+              setFile(target)
             }
           }
           required
         />
 
-        <input className="bg-white" type="number" name="width" id="width" placeholder="Width" value={width} onChange={(e) => setWidth(e.target.value)} />
-        <input className="bg-white" type="number" name="height" id="height" placeholder="Height" value={height} onChange={(e) => setHeight(e.target.value)} />
+        <input className="bg-white" type="number" name="width" id="width" placeholder="Width" min={1} max={1000} value={width}  onChange={(e) => setWidth(e.target.value)} />
+        <input className="bg-white" type="number" name="height" id="height" placeholder="Height" min={1} max={1000} value={height} onChange={(e) => setHeight(e.target.value)} />
         <button className="bg-blue-500 p-2 rounded-2xl disabled:bg-gray-400" type="submit" disabled={isLoading} >
           {isLoading ? "Generating..." : "Generate"}
         </button>
       </form>
+
+      {error && (
+        <p className="mt-4 text-red-600 font-medium">{error}</p>
+      )}
 
       {picrossImg && (
         <div className="mt-4 flex flex-col items-center gap-4">

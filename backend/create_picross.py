@@ -17,13 +17,44 @@ def png_to_json(image, col, row):
     json_data = {}
     json_data['columns'] = col
     json_data['rows'] = row
+    json_data['row_clues'] = []
+    json_data['column_clues'] = []
     json_data['grid'] = []
+
 
     for i in range(row):
         current_row = []
         for j in range(col):
             current_row.append(int(pixelised[i][j]) == 0)
         json_data['grid'].append(current_row)
+
+    for i in range(row):
+        clues = []
+        count = 0
+        for j in range(col):
+            if json_data['grid'][i][j]:
+                count += 1
+            else:
+                if count > 0:
+                    clues.append(count)
+                count = 0
+        if count > 0:
+            clues.append(count)
+        json_data['row_clues'].append(clues)
+
+    for j in range(col):
+        clues = []
+        count = 0
+        for i in range(row):
+            if json_data['grid'][i][j]:
+                count += 1
+            else:
+                if count > 0:
+                    clues.append(count)
+                count = 0
+        if count > 0:
+            clues.append(count)
+        json_data['column_clues'].append(clues)
 
     return json_data
 
