@@ -22,15 +22,25 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [width, setWidth] = useState<string>("10");
   const [height, setHeight] = useState<string>("10");
-  const [picrossImg, setPicrossImg] = useState<any>(null);
-  const [JSONDownloadUrl, setJSONDownloadUrl] = useState<any>(null);
+  const [picrossImg, setPicrossImg] = useState<string | null>(null);
+  const [JSONDownloadUrl, setJSONDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const { apiUrl } = useLoaderData<typeof loader>();
 
   const handleGenerate = async (e: any) => {
-    setIsLoading(true);
     e.preventDefault();
     if (!file) { return }
+
+    if (picrossImg){
+      URL.revokeObjectURL(picrossImg);
+    }
+    if (JSONDownloadUrl){
+      URL.revokeObjectURL(JSONDownloadUrl);
+    }
+
+    setIsLoading(true);
+    setError(null);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -43,22 +53,32 @@ export default function Home() {
         body: formData
       })
 
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.statusText}`);
+      }
+
       const blob = await res.blob();
       const zip = await JSZip.loadAsync(blob);
 
-      const imgFile = await zip.file("picross.png");
-      const imgBlob = await imgFile!.async("blob");
+      const imgFile = zip.file("picross.png");
+      const jsonFile = zip.file("picross.json");
+      if (!imgFile || !jsonFile) {
+        throw new Error("Missing files in the zip");
+      }
+      const imgBlob = await imgFile.async("blob");
       const imgUrl = URL.createObjectURL(imgBlob);
       setPicrossImg(imgUrl);
 
-      const jsonFile = await zip.file("picross.json");
-      const jsonContent = await jsonFile!.async("string");
+      const jsonContent = await jsonFile.async("string");
       const jsonBlob = new Blob([jsonContent], { type: "application/json" });
       const jsonUrl = URL.createObjectURL(jsonBlob);
       setJSONDownloadUrl(jsonUrl);
 
     } catch (error) {
+      setError("Failed to generate picross puzzle. Please try again.");
       console.error("Error generating picross puzzle:", error);
+      setPicrossImg(null);
+      setJSONDownloadUrl(null);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +113,7 @@ export default function Home() {
             alt="Picross puzzle"
           />
 
-          <a href={JSONDownloadUrl}
+          <a href={JSONDownloadUrl ?? undefined}
             download="picross_puzzle.json"
             className="text-blue-500 underline"
           >
