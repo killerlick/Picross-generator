@@ -35,7 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       
       <body>
-        <main className="bg-gray-200 text-black min-h-screen">
+        <main className="bg-white text-black min-h-screen">
           {children}
         </main>
         <ScrollRestoration />
